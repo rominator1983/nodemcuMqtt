@@ -1,5 +1,5 @@
 -- TODO: consider sending "stat" too for SONOFF devices with POWER
-mqttTopic = "tele/outdoor/temperature"
+mqttTopic = "outdoor/temperature"
 mqttServerIP = "192.168.7.15"
 wifiSSID = "your SSID here"
 wifiPassword = "your password here"

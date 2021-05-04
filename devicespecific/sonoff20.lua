@@ -12,10 +12,10 @@ local relaisState = relaisStateOnPowerOn
 
 gpio.mode(buttonPin,gpio.INT)
 gpio.mode(relaisPin,gpio.OUTPUT)
-gpio.mode(powerPin,gpio.OUTPUT)
+gpio.mode(powerIndicatorPin,gpio.OUTPUT)
 
 -- TODO: Could be signalling something else
-gpio.write(powerPin, gpio.LOW)
+gpio.write(powerIndicatorPin, gpio.LOW)
 
 if relaisStateOnPowerOn == 0 then
     gpio.write(relaisPin, gpio.LOW)
@@ -34,7 +34,7 @@ local function handleButtonPress ()
         relaisState = 0
     end
 
-    -- TODO: Signal state over MQTT
+    sendMqttTeleMessage()
 end
 
 local function interrupt(level, when, eventCount)
@@ -48,6 +48,25 @@ local function interrupt(level, when, eventCount)
     end
     
     gpio.trig(buttonPin, "up", interrupt)
+end
+
+function createDeviceSpecificMqttPayload()
+    if relaisState == 0 then
+        return "\"POWER\": \"OFF\""
+    else
+        return "\"POWER\": \"ON\""
+    end
+end
+
+function devicespecificMqttMessageHandler(message)
+    if message == "ON" then
+        gpio.write(relaisPin, gpio.HIGH)
+        relaisState = 1
+    end
+    if message == "OFF" then
+        gpio.write(relaisPin, gpio.LOW)
+        relaisState = 0
+    end
 end
 
 -- TODO: subscribe to MQTT
