@@ -4,9 +4,8 @@ mqttServerIP = "192.168.7.15"
 wifiSSID = "your SSID here"
 wifiPassword = "your password here"
 
--- TODO: Set to download-URL of github?!?
-otaInit = "http://server/init.lua"
-otaConfig = "http://server/config.lua"
+-- NOTE: Must serve init.lua, config.lua, http.lua and wifi.lua (for example http://server/init.lua)
+otaBase = "http://server/"
 
 mqttServerUserName = "your user name here"
 mqttServerPassword = "your password here"
@@ -18,3 +17,5 @@ dayLightSavingsOffsetInSeconds = 3600
 timerIntervalInSeconds = 60000
 
 startupTimerIntervalInSeconds = 1000
+
+restartIntervalInMinutes = 240

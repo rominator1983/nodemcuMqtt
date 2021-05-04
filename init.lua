@@ -10,96 +10,27 @@ mqttConnected=false
 minutesSinceStart=0
 
 dofile("config.lua")
-
-function listap(t)
-  for bssid,v in pairs(t) do
-    local rssi = string.match(v, "[^,]*,([^,]*).*")
-    print(bssid.." "..rssi.." raw: "..v)
-  end
-end
-
-function connectToWifi()
-  print ("MAC:"..wifi.sta.getmac())
-
-  wifi.setmode(wifi.STATION)
-  wifi.sta.getap(1, function(t)
-    -- TODO: implement searching for the WIFI with the highest RSSI to connect to. see https://nodemcu.readthedocs.io/en/release/modules/wifi/#wifistagetap on listing WIFIs etc.
-    listap(t)
-
-    local stationConfig={}
-    stationConfig.ssid=wifiSSID
-    stationConfig.pwd=wifiPassword
-    stationConfig.save=false
-    stationConfig.auto=true
-    wifi.sta.clearconfig()
-    wifi.sta.config(stationConfig)
-    wifi.sta.connect()  
-  end)
-end
-
-function isWifiConnected()
-  local rssi = wifi.sta.getrssi()
-
-  if rssi==nil then
-    print("- not connected to WIFI")
-    return false
-  else
-    print("- wifi connected. rssi: "..rssi)
-  end
-
-  ip = wifi.sta.getip()
-  if ip==nil then
-    print("- got no ip")
-    return false
-  else
-    print("- ip: "..ip)
-    return true
-  end
-end
-
--- TODO: handle compilation and callbacks etc. Overwriting should ideally only happen if all things could get downloaded
-function download(url,fileName)
-  http.get(url, nil, function(code, data)
-    if code==200 then
-      print("- HTTP request for OTA succeeded. Writing '"..fileName.."'")
-      
-      if file.open(fileName, "w+") then
-        file.write(data)
-        file.close()
-        print("- written '"..fileName.."'")
-      else
-        print("- error writing '"..fileName.."'")
-      end
-      
-      firstWifiConnection = false
-    else
-      print("- HTTP request for '"..url.."' failed.")
-    end
-  end)
-end
-
-function onFirstWifiConnection()
-  if firstWifiConnection then
-    print "- doing first WIFI connection stuff"
-    
-    download(otaInit)
-    -- TODO: Enable this
-    --download(otaConfig)
-
-  end
-end
+dofile("wifi.lua")
+dofile("http.lua")
+dofile("devicespecific.lua")
 
 function connectToMqttIfNeeded()
   if mqttClient==nil or mqttConnected==false then    
     print("- connecting to MQTT")
 
-    local clientID = 'client_' .. wifi.sta.getip()
+    local clientID = 'nodemcu' .. wifi.sta.getip()
 
-    
+    print("- clientID: "..clientID.." mqtt user name: '"..mqttServerUserName.."'")
+
+    print("- feeding watchdog")
+    tmr.wdclr()
     mqttClient = mqtt.Client(clientID, mqttKeepAliceInSeconds, mqttServerUserName, mqttServerPassword, "")
+
+    print("- created client")
     mqttClient:lwt(mqttTopic, "offline", 0, 0)
     
-    mqttClient:connect(mqttmqttServerIP, 1883, false, function(client)
+    print("- lwt set, connecting to '"..mqttServerIP.."'")
+    mqttClient:connect(mqttServerIP, 1883, false, function(client)
       mqttConnected = true      
 
       print("- connected to MQTT")
@@ -112,6 +43,27 @@ function connectToMqttIfNeeded()
     end)
   else
     print("- already connected to MQTT")
+  end
+end
+
+function onFirstWifiConnection()
+  if firstWifiConnection then
+    print "- doing first WIFI connection stuff"
+    
+    timer:stop()
+
+    download(otaBase..'init.lua', 'init.lua', function()
+      download(otaBase..'config.lua', 'config.lua', function()
+        download(otaBase..'http.lua', 'http.lua', function ()
+          download(otaBase..'wifi.lua', 'wifi.lua', function ()
+            download(otaBase..'devicespecific.lua', 'devicespecific.lua', function ()
+              connectToMqttIfNeeded()
+              timer:start()
+            end)
+          end)
+        end)
+      end)
+    end)
   end
 end
 
@@ -176,7 +128,6 @@ function timerExpired()
 
   if isWifiConnected() then
     onFirstWifiConnection()
-    connectToMqttIfNeeded()
     
     if mqttConnected then
       local temperature, humidity = readTemperatureAndHumidity()
@@ -191,7 +142,9 @@ function timerExpired()
       timer:interval(timerIntervalInSeconds)
       
       minutesSinceStart = minutesSinceStart + 1
-      if minutesSinceStart > 240 then
+
+      if minutesSinceStart > restartIntervalInMinutes then
+        print("RESTARTING DEVICE AFTER '"..restartIntervalInMinutes.."' minutes.")
         node.restart()
       end
     end
