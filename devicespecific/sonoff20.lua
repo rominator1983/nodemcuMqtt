@@ -1,4 +1,4 @@
--- TODO: Move to config file even if this is device specific
+-- TODO: Move to config file even if this is device specific and maybe rename to something with powerDevice or similiar
 -- NOTE: Config section
 -- NOTE: See https://nodemcu.readthedocs.io/en/dev/modules/gpio/
 local buttonPin = 3
@@ -7,9 +7,7 @@ local powerIndicatorPin = 7
 -- NOTE: a very big debounce time since no multi presses or long holds are implemented at the moment. See https://en.wikipedia.org/wiki/Switch#Contact_bounce
 local buttonDebounceTimeInMilliseconds = 300
 local relaisStateOnPowerOn = 0
-local autoPowerOffInSeconds = 10
-
-
+local autoPowerOffInSeconds = 1800
 
 local relaisState = relaisStateOnPowerOn
 
@@ -73,18 +71,23 @@ end
 
 function createDeviceSpecificMqttPayload()
     if relaisState == 0 then
-        return "\"POWER\": \"OFF\"\n"
+        return ", \"POWER\": \"OFF\"\n"
     else
-        return "\"POWER\": \"ON\"\n"
+        return ", \"POWER\": \"ON\"\n"
     end
 end
 
 function devicespecificMqttMessageHandler(message)
-    if message == "ON" then
+    if message == "ON" or message == "true" then
         powerOn()
     end
-    if message == "OFF" then
+    if message == "OFF" or message == "false" then
         powerOff()
+    end
+
+    if message == "restart" or message = "reset" then
+        powerOff()
+        node.restart()
     end
 end
 

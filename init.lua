@@ -49,13 +49,16 @@ function timerExpired()
       if (restartIntervalInMinutes > 0 and minutesSinceStart > restartIntervalInMinutes) then        
         print("RESTARTING DEVICE AFTER '"..restartIntervalInMinutes.."' MINUTES.")
 
-        node.restart()        
+        node.restart()
       end
     end
   end
   
   print ("")
 end
+
+print("mqttPublishTopic: "..mqttPublishTopic)
+print("mqttSubscriptionTopic: "..mqttSubscriptionTopic)
 
 connectToWifi()
 
