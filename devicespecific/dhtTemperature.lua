@@ -17,13 +17,19 @@ local function readTemperatureAndHumidity()
     return "NULL","NULL"
 end
 
-function createMqttPayload()
+function createDeviceSpecificMqttPayload()
 
     local temperature, humidity = readTemperatureAndHumidity()
 
-    return "\"Temperature\": \""..temperature.."\",\n\"humidity\": \""..humidity.."\",\n"
+    return ", \"Temperature\": \""..temperature.."\",\n\"humidity\": \""..humidity.."\",\n"
 end
 
 function devicespecificMqttMessageHandler(message)
-    -- NOTE: ignore
+    if message == "restart" or message == "reset" then
+        node.restart()
+    end
+end
+
+function devicespecificCanRestart()
+    return 1
 end

@@ -3,6 +3,7 @@ firstWifiConnection = true
 mqttClient=nil
 mqttConnected=false
 minutesSinceStart=0
+powerIndicatorPin = 4
 
 dofile("config.lua")
 dofile("wifi.lua")
@@ -10,8 +11,24 @@ dofile("http.lua")
 dofile("mqtt.lua")
 dofile("devicespecific.lua")
 
+gpio.mode(powerIndicatorPin,gpio.OUTPUT)
+
+function setPowerIndicatorOn()
+  powerIndicatorState = 1
+  gpio.write(powerIndicatorPin, gpio.LOW)
+end
+
+function setPowerIndicatorOff()
+  powerIndicatorState = 0
+  gpio.write(powerIndicatorPin, gpio.HIGH)
+end
+
+setPowerIndicatorOn()
+
 function onFirstWifiConnection()
   if firstWifiConnection then
+    setPowerIndicatorOn()
+
     print "- doing first WIFI connection stuff"
     
     timer:stop()
@@ -33,6 +50,14 @@ function onFirstWifiConnection()
   end
 end
 
+function togglePowerIndicatorState()
+  if powerIndicatorState == 0 then
+    setPowerIndicatorOn()
+  else
+    setPowerIndicatorOff()
+  end
+end
+
 function timerExpired()
   print("timer expired. minutesSinceStart: "..minutesSinceStart)
 
@@ -41,17 +66,21 @@ function timerExpired()
 
     if mqttConnected then
       sendMqttTeleMessage()
+
+      setPowerIndicatorOff()
       
       timer:interval(timerIntervalInSeconds)
       
       minutesSinceStart = minutesSinceStart + 1
 
-      if (restartIntervalInMinutes > 0 and minutesSinceStart > restartIntervalInMinutes) then        
-        print("RESTARTING DEVICE AFTER '"..restartIntervalInMinutes.."' MINUTES.")
+      if (restartIntervalInTimerIntervals > 0 and minutesSinceStart > restartIntervalInTimerIntervals and devicespecificCanRestart()) then
+        print("RESTARTING DEVICE AFTER '"..restartIntervalInTimerIntervals.."' timers elapsed.")
 
         node.restart()
       end
     end
+  else
+    togglePowerIndicatorState()
   end
   
   print ("")

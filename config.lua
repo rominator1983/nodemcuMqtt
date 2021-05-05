@@ -18,7 +18,7 @@ dayLightSavingsOffsetInSeconds = 3600
 
 timerIntervalInSeconds = 60000
 
-startupTimerIntervalInSeconds = 1000
+startupTimerIntervalInSeconds = 500
 
 -- NOTE: 0 means no restart
-restartIntervalInMinutes = 240
+restartIntervalInTimerIntervals = 480

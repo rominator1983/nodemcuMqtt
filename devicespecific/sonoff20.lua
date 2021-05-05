@@ -3,7 +3,7 @@
 -- NOTE: See https://nodemcu.readthedocs.io/en/dev/modules/gpio/
 local buttonPin = 3
 local relaisPin = 6
-local powerIndicatorPin = 7
+powerIndicatorPin = 7
 -- NOTE: a very big debounce time since no multi presses or long holds are implemented at the moment. See https://en.wikipedia.org/wiki/Switch#Contact_bounce
 local buttonDebounceTimeInMilliseconds = 300
 local relaisStateOnPowerOn = 0
@@ -15,10 +15,6 @@ local powerOffTimer = tmr.create()
 
 gpio.mode(buttonPin,gpio.INT)
 gpio.mode(relaisPin,gpio.OUTPUT)
-gpio.mode(powerIndicatorPin,gpio.OUTPUT)
-
--- TODO: Could be signalling something else
-gpio.write(powerIndicatorPin, gpio.LOW)
 
 -- TODO: read from flash?
 if relaisStateOnPowerOn == 0 then
@@ -85,9 +81,17 @@ function devicespecificMqttMessageHandler(message)
         powerOff()
     end
 
-    if message == "restart" or message = "reset" then
+    if message == "restart" or message == "reset" then
         powerOff()
         node.restart()
+    end
+end
+
+function devicespecificCanRestart()
+    if relaisState == 0 then
+        return 1
+    else
+        return 0
     end
 end
 
