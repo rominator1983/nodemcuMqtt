@@ -46,10 +46,9 @@ function timerExpired()
       
       minutesSinceStart = minutesSinceStart + 1
 
-      if minutesSinceStart > restartIntervalInMinutes then        
+      if (restartIntervalInMinutes > 0 and minutesSinceStart > restartIntervalInMinutes) then        
         print("RESTARTING DEVICE AFTER '"..restartIntervalInMinutes.."' MINUTES.")
 
-        -- TODO: call device specific code to save/reload things (for example relais state) or deprecate this feature
         node.restart()        
       end
     end

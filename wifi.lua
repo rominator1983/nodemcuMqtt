@@ -10,7 +10,7 @@ function listap(t)
   
     wifi.setmode(wifi.STATION)
     wifi.sta.getap(1, function(t)
-      -- TODO: implement searching for the WIFI with the highest RSSI to connect to. see https://nodemcu.readthedocs.io/en/release/modules/wifi/#wifistagetap on listing WIFIs etc.
+      -- TODO: implement searching for the WIFI with the highest RSSI to connect to out of a list of configured WIFIs
       listap(t)
   
       local stationConfig={}

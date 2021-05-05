@@ -1,5 +1,7 @@
--- TODO: consider sending "stat" too for SONOFF devices with POWER
-mqttTopic = "outdoor/temperature"
+mqttSubscriptionTopic = "cmnd/outdoor/temperature/POWER"
+-- NOTE: should be "SENSOR" instead of "STATE" for sensory devices
+mqttPublishTopic = "tele/outdoor/temperature/STATE"
+
 mqttServerIP = "192.168.7.15"
 wifiSSID = "your SSID here"
 wifiPassword = "your password here"
@@ -18,4 +20,5 @@ timerIntervalInSeconds = 60000
 
 startupTimerIntervalInSeconds = 1000
 
+-- NOTE: 0 means no restart
 restartIntervalInMinutes = 240

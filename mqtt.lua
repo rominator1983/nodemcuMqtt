@@ -11,7 +11,7 @@ function connectToMqttIfNeeded()
         mqttClient = mqtt.Client(clientID, mqttKeepAliceInSeconds, mqttServerUserName, mqttServerPassword, "")
 
         print("- created client")
-        mqttClient:lwt(mqttTopic, "offline", 0, 0)
+        mqttClient:lwt(mqttPublishTopic, "offline", 0, 0)
         
         print("- lwt set, connecting to '"..mqttServerIP.."'")
         mqttClient:connect(mqttServerIP, 1883, false, function(client)
@@ -19,9 +19,8 @@ function connectToMqttIfNeeded()
 
             print("- connected to MQTT")
 
-            -- TODO: configure sub-topic
-            mqttClient:subscribe("cmnd/"..mqttTopic.."/POWER",0, function (client)
-                print("- subscribed to '"..mqttTopic.."' successfully.")
+            mqttClient:subscribe(mqttSubscriptionTopic,0, function (client)
+                print("- subscribed to '"..mqttSubscriptionTopic.."' successfully.")
             end)
 
             mqttClient:on("message", function(client, topic, message)
@@ -52,7 +51,7 @@ function getFormattedTime()
     -- TODO: find a method for doing the time zone and daylight-savings better
     utcTime = utcTime + utcOffsetInSeconds
 
-    -- NOTE: does not consider "last sunday of march/october" rule. So time will be 1 hour of for up to a week
+    -- NOTE: does not consider "last sunday of march/october" rule. So time will be 1 hour off for up to a week
     if (decodedTime["mon"] > 3 and decodedTime["mon"] < 11) then
         utcTime = utcTime + dayLightSavingsOffsetInSeconds
     end
@@ -69,10 +68,6 @@ function createMqttPayload(formattedTime, rssi)
 end
 
 function sendMqttTeleMessage()
-
-    -- TODO: away!
-    local temperature, humidity = "NULL","NULL"
-  
     local formattedTime = getFormattedTime()
     local rssi = wifi.sta.getrssi()
     if rssi==nil then
@@ -82,8 +77,11 @@ function sendMqttTeleMessage()
     local mqttPayload = createMqttPayload(formattedTime, rssi)
     -- NOTE: If WIFI is missing this will probably trigger a restart
 
-    -- TODO: topic would be "SENSOR" so let this be configured
-    local mqttSendResult = mqttClient:publish("tele/"..mqttTopic.."/STATE", mqttPayload, 0, 0, function(client)
+    if mqttClient == nil then
+        return
+    end
+
+    local mqttSendResult = mqttClient:publish(mqttPublishTopic, mqttPayload, 0, 0, function(client)
       print("- sent telemetry over MQTT")
       end)
       

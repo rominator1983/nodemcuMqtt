@@ -7,8 +7,13 @@ local powerIndicatorPin = 7
 -- NOTE: a very big debounce time since no multi presses or long holds are implemented at the moment. See https://en.wikipedia.org/wiki/Switch#Contact_bounce
 local buttonDebounceTimeInMilliseconds = 300
 local relaisStateOnPowerOn = 0
+local autoPowerOffInSeconds = 10
+
+
 
 local relaisState = relaisStateOnPowerOn
+
+local powerOffTimer = tmr.create()
 
 gpio.mode(buttonPin,gpio.INT)
 gpio.mode(relaisPin,gpio.OUTPUT)
@@ -17,25 +22,41 @@ gpio.mode(powerIndicatorPin,gpio.OUTPUT)
 -- TODO: Could be signalling something else
 gpio.write(powerIndicatorPin, gpio.LOW)
 
+-- TODO: read from flash?
 if relaisStateOnPowerOn == 0 then
     gpio.write(relaisPin, gpio.LOW)
 else
     gpio.write(relaisPin, gpio.HIGH)
 end
 
-local lastWhen = 0
+function powerOn()
+    gpio.write(relaisPin, gpio.HIGH)
+    relaisState = 1
 
-local function handleButtonPress ()
-    if relaisState == 0 then
-        gpio.write(relaisPin, gpio.HIGH)
-        relaisState = 1
-    else
-        gpio.write(relaisPin, gpio.LOW)
-        relaisState = 0
+    if autoPowerOffInSeconds > 0 then
+        powerOffTimer:alarm (autoPowerOffInSeconds *  1000, tmr.ALARM_SINGLE, function ()
+            powerOff()
+        end)
     end
 
     sendMqttTeleMessage()
+end    
+
+function powerOff()
+    gpio.write(relaisPin, gpio.LOW)
+    relaisState = 0
+    sendMqttTeleMessage()
+end    
+
+local function handleButtonPress ()
+    if relaisState == 0 then
+        powerOn()
+    else
+        powerOff()
+    end
 end
+
+local lastWhen = 0
 
 local function interrupt(level, when, eventCount)
     gpio.trig(buttonPin, "none", interrupt)
@@ -52,23 +73,19 @@ end
 
 function createDeviceSpecificMqttPayload()
     if relaisState == 0 then
-        return "\"POWER\": \"OFF\""
+        return "\"POWER\": \"OFF\"\n"
     else
-        return "\"POWER\": \"ON\""
+        return "\"POWER\": \"ON\"\n"
     end
 end
 
 function devicespecificMqttMessageHandler(message)
     if message == "ON" then
-        gpio.write(relaisPin, gpio.HIGH)
-        relaisState = 1
+        powerOn()
     end
     if message == "OFF" then
-        gpio.write(relaisPin, gpio.LOW)
-        relaisState = 0
+        powerOff()
     end
 end
-
--- TODO: subscribe to MQTT
 
 gpio.trig(buttonPin, "up", interrupt)
