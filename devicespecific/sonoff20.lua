@@ -16,7 +16,6 @@ local powerOffTimer = tmr.create()
 gpio.mode(buttonPin,gpio.INT)
 gpio.mode(relaisPin,gpio.OUTPUT)
 
--- TODO: read from flash?
 if relaisStateOnPowerOn == 0 then
     gpio.write(relaisPin, gpio.LOW)
 else

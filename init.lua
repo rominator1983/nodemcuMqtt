@@ -73,6 +73,7 @@ function timerExpired()
       
       minutesSinceStart = minutesSinceStart + 1
 
+      -- NOTE: periodic restart can be dismissed by device specific thingies (for example a turned on device)
       if (restartIntervalInTimerIntervals > 0 and minutesSinceStart > restartIntervalInTimerIntervals and devicespecificCanRestart()) then
         print("RESTARTING DEVICE AFTER '"..restartIntervalInTimerIntervals.."' timers elapsed.")
 
