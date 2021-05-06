@@ -3,6 +3,8 @@ firstWifiConnection = true
 mqttClient=nil
 mqttConnected=false
 minutesSinceStart=0
+
+-- NOTE: most ESP modules have an LED on GPIO2
 powerIndicatorPin = 4
 
 dofile("config.lua")
