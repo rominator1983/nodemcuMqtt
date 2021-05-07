@@ -16,9 +16,12 @@ mqttKeepAliceInSeconds = 60
 utcOffsetInSeconds = 3600
 dayLightSavingsOffsetInSeconds = 3600
 
-timerIntervalInSeconds = 60000
+timerIntervalInMillseconds = 30000
 
-startupTimerIntervalInSeconds = 500
+startupTimerIntervalInMillseconds = 500
 
 -- NOTE: 0 means no restart
 restartIntervalInTimerIntervals = 480
+
+-- NOTE: this many number of startupTimerIntervalInMillseconds or timerIntervalInMillseconds lead to a restart
+maxNumberOfTimersWithoutWifi = 20

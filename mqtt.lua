@@ -89,7 +89,7 @@ function sendMqttTeleMessage()
       print("- error sending telemetry over MQTT. Reconnecting to MQTT")
       mqttClient:close()
       mqttClient = nil
-      timer:interval(startupTimerIntervalInSeconds)
+      timer:interval(startupTimerIntervalInMillseconds)
     end
 end
   

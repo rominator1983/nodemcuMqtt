@@ -3,6 +3,7 @@ firstWifiConnection = true
 mqttClient=nil
 mqttConnected=false
 minutesSinceStart=0
+numberOfTimersWithoutWifi=0
 
 -- NOTE: most ESP modules have an LED on GPIO2
 powerIndicatorPin = 4
@@ -64,6 +65,8 @@ function timerExpired()
   print("timer expired. minutesSinceStart: "..minutesSinceStart)
 
   if isWifiConnected() then
+    numberOfTimersWithoutWifi = 0
+
     onFirstWifiConnection()
 
     if mqttConnected then
@@ -71,7 +74,7 @@ function timerExpired()
 
       setPowerIndicatorOff()
       
-      timer:interval(timerIntervalInSeconds)
+      timer:interval(timerIntervalInMillseconds)
       
       minutesSinceStart = minutesSinceStart + 1
 
@@ -84,6 +87,11 @@ function timerExpired()
     end
   else
     togglePowerIndicatorState()
+    numberOfTimersWithoutWifi = numberOfTimersWithoutWifi + 1
+
+    if numberOfTimersWithoutWifi > maxNumberOfTimersWithoutWifi then
+      node.restart()
+    end
   end
   
   print ("")
@@ -95,4 +103,4 @@ print("mqttSubscriptionTopic: "..mqttSubscriptionTopic)
 connectToWifi()
 
 timer = tmr.create()
-timer:alarm(startupTimerIntervalInSeconds, 1, timerExpired)
+timer:alarm(startupTimerIntervalInMillseconds, 1, timerExpired)
