@@ -56,7 +56,14 @@ local function interrupt(level, when, eventCount)
     
     print("- when: "..when)
 
-    if when >= (lastWhen + (buttonDebounceTimeInMilliseconds*1000)) then
+    diff = when - lastWhen
+
+    -- NOTE: handle overflow. tmr.now (and thus the value for the interupt func) is an uint31 and restarts with 0 when overflowing
+    if diff < 0 then
+        diff = diff + 2147483647
+    end
+
+    if diff >= (buttonDebounceTimeInMilliseconds*1000) then
         lastWhen = when
         handleButtonPress ()
     end
